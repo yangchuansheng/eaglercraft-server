@@ -12,11 +12,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: sudosubin/git-clone-action@v1
         with:
-          fetch-depth: 0
           repository: mirrorvim/eaglerX-1.8-server
-          github-server-url: 'https://gitee.com'
+          platform: 'gitee'
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
