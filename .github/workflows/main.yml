@@ -11,10 +11,8 @@ jobs:
   build-docker-image:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: sudosubin/git-clone-action@v1.0.1
-        with:
-          repository: yangchuansheng/eaglerXserver
+      - name: Checkout upstream source
+        run: git clone --depth 1 https://gitee.com/mirrorvim/eaglerX-1.8-server.git .
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -28,6 +26,10 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get datetime tag
+        id: datetime
+        run: echo "datetime=$(date -u +'%Y%m%d%H%M%S')" >> "$GITHUB_OUTPUT"
 
       #- name: Get tag
       #  id: tag

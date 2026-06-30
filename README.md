@@ -1,141 +1,271 @@
-# Deploy and Host 1.12 EaglerCraft Server on Sealos
+# EaglercraftX Server Docker Image
 
-<img width="3840" height="2160" alt="EaglerCraft Server 1.12 on Sealos" src="https://github.com/user-attachments/assets/1b8fa67f-e34f-4b11-aea7-288e8695d3f9" />
+[![Container package][container-badge]][container-package]
+[![License][license-badge]][license]
 
+[![Deploy on Sealos][sealos-badge]][sealos-template]
 
-EaglerCraft is an AOT compiled voxel game inspired from Minecraft designed to run on Javascript. It uses TeaVM and LAX1DUDE's OpenGL emulator to run a Java virtual machine fully compatible with browsers. Eaglercraft can be played on ChromeOS, iOS, Android, and pretty much any device with a web browser; including your smart fridge. This template deploys a production-ready EaglerCraft 1.8 server with WebSocket support and persistent world storage on Sealos Cloud.
+<!-- README-I18N:START -->
 
-## About Hosting EaglerCraft Server
+**English** | [Español](readmes/README.es.md) |
+[Português](readmes/README.pt.md) | [Deutsch](readmes/README.de.md) |
+[Français](readmes/README.fr.md) | [简体中文](readmes/README.zh.md) |
+[繁體中文](readmes/README.zh-Hant.md) | [한국어](readmes/README.ko.md) |
+[日本語](readmes/README.ja.md) | [العربية](readmes/README.ar.md) |
+[Русский](readmes/README.ru.md) | [Українська](readmes/README.uk.md) |
+[Türkçe](readmes/README.tr.md)
 
-EaglerCraft Server runs as a stateful game server that provides dual WebSocket endpoints for browser-based Minecraft gameplay. The server maintains three persistent worlds (Overworld, Nether, and The End) with dedicated storage for each dimension, ensuring your players' progress and builds are safely preserved across restarts and updates.
+<!-- README-I18N:END -->
 
-The Sealos template automatically provisions separate persistent volumes for each Minecraft dimension, handles SSL certificate generation for secure WebSocket connections, and provides two access endpoints optimized for different connection scenarios.
+This repository publishes a Docker image for EaglercraftX servers.
+The image is built from the latest upstream source at
+[mirrorvim/eaglerX-1.8-server][upstream] and is published to GitHub
+Container Registry as [`ghcr.io/yangchuansheng/eaglerx1.8server`][container-package].
 
-## Common Use Cases
+The upstream project packages browser clients, Bungee/Waterfall WebSocket
+access, and Paper server runtimes into one image. At container startup,
+`MINECRAFT_VERSION` selects the active runtime.
 
-- **Educational Gaming**: Provide instant-access Minecraft servers for students without requiring client installations or account purchases
-- **Browser-Based Gaming Communities**: Host public or private Minecraft servers accessible from any device with a web browser
-- **Quick Multiplayer Sessions**: Set up temporary game servers for friends without complex port forwarding or hosting configuration
-- **Cross-Platform Play**: Enable Minecraft gameplay on devices where traditional clients cannot be installed (Chromebooks, tablets, restricted networks)
-- **Demo and Testing Environments**: Create disposable Minecraft servers for mod testing or plugin development
+## What This Image Provides
 
-## Dependencies for EaglerCraft Server Hosting
+| Item | Value |
+| --- | --- |
+| Image | `ghcr.io/yangchuansheng/eaglerx1.8server:1.12.1` |
+| Build source | `https://gitee.com/mirrorvim/eaglerX-1.8-server` |
+| Supported server versions | Paper `1.8.8` and Paper `1.12.2` |
+| Version selector | `MINECRAFT_VERSION=1.8` or `MINECRAFT_VERSION=1.12` |
+| Game and browser entry | Port `5200` |
+| Admin and RCON bridge | Port `5201`, enabled with `RCON_PASSWORD` |
+| Recommended persistence path | `/eaglerX-1.8-server` |
 
-The Sealos template includes all required dependencies: the EaglerCraft server runtime, WebSocket proxy, and persistent storage for world data.
+## Deploy On Sealos
 
-### Deployment Dependencies
+The Sealos App Store template deploys this image as a stateful server with
+WebSocket access, an HTTP/admin endpoint, and persistent storage for the
+Overworld, Nether, and The End.
 
-- [EaglerCraft GitHub Repository](https://github.com/lax1dude/eaglercraft) - Original EaglerCraft project and documentation
-- [EaglerCraft Server Docker Image](https://github.com/yangchuansheng/eaglercraft-server) - Containerized server implementation used in this template
-- [Minecraft Wiki](https://minecraft.fandom.com/wiki/Java_Edition_1.8) - Minecraft 1.8 gameplay reference
+[![Deploy on Sealos][sealos-badge]][sealos-template]
 
-## Implementation Details
+1. Open the [EaglerCraft Server template][sealos-template].
+2. Click "Deploy Now".
+3. Wait for the Sealos deployment to finish.
+4. Use the 5200 endpoint for browser gameplay and multiplayer server entry.
+5. Use the 5201 endpoint for the HTTP/admin surface.
 
-### Architecture Components
+The template source is maintained in
+[`labring-actions/templates`][sealos-template-source].
 
-This template deploys a single stateful service with dual WebSocket endpoints:
+## Docker Quick Start
 
-- **EaglerCraft Server**: Minecraft 1.8 server with dual WebSocket proxies for browser connectivity
-- **WebSocket Endpoint (Port 5200)**: Standard WebSocket connection for multiplayer mode - required for adding servers via the multiplayer menu
-- **WebSocket Endpoint (Port 5201)**: Enhanced WebSocket connection with persistent connection support - recommended for extended play sessions as it prevents disconnections
-- **Persistent Storage**: Three dedicated 1GB volumes for Overworld, Nether, and End dimensions
+Pull the published image:
 
-**Configuration:**
+```bash
+docker pull ghcr.io/yangchuansheng/eaglerx1.8server:1.12.1
+```
 
-The server uses a StatefulSet deployment to ensure stable network identity and persistent storage association. Both endpoints use WebSocket protocol (wss://) for secure real-time game communication. Port 5200 is designed for multiplayer server registration, while port 5201 provides a more stable connection that won't drop during long gameplay sessions.
+Run a Paper 1.12.2 server with persistent data and the admin panel:
 
-Each Minecraft dimension (Overworld, Nether, End) receives its own persistent volume to prevent data loss and enable efficient backups. The server is allocated 200m-2000m CPU and 409Mi-4096Mi memory to handle multiple concurrent players and world generation.
+```bash
+docker run -d \
+  --name eaglerx-1-12 \
+  -p 5200:5200 \
+  -p 5201:5201 \
+  -v "$PWD/eagler-data-1.12:/eaglerX-1.8-server" \
+  -e MINECRAFT_VERSION=1.12 \
+  -e RCON_PASSWORD=change-this-password \
+  ghcr.io/yangchuansheng/eaglerx1.8server:1.12.1
+```
 
-**Credits（Password）:**
+Run a Paper 1.8.8 server:
 
-- **EaglerCraft and EaglerCraftX**: lax1dude (Calder Young)
-- **EaglerCraft Server**: ayunami2000
+```bash
+docker run -d \
+  --name eaglerx-1-8 \
+  -p 5200:5200 \
+  -p 5201:5201 \
+  -v "$PWD/eagler-data-1.8:/eaglerX-1.8-server" \
+  -e MINECRAFT_VERSION=1.8 \
+  -e RCON_PASSWORD=change-this-password \
+  ghcr.io/yangchuansheng/eaglerx1.8server:1.12.1
+```
 
-**License Information:**
+Open the browser client at:
 
-EaglerCraft is provided as-is under its respective license. Please review the [original repository](https://github.com/lax1dude/eaglercraft) for licensing details. This template uses a community-maintained server image.
+```text
+http://localhost:5200
+```
 
-## Why Deploy EaglerCraft Server on Sealos?
+Open the admin panel at:
 
-Sealos is an AI-assisted Cloud Operating System built on Kubernetes that unifies the entire application lifecycle, from development in cloud IDEs to production deployment and management. It is perfect for building and scaling modern AI applications, SaaS platforms, and complex microservice architectures. By deploying EaglerCraft Server on Sealos, you get:
+```text
+http://localhost:5201/admin
+```
 
-- **One-Click Deployment**: Deploy a complete Minecraft server with persistent world storage in seconds. No server configuration, no port forwarding, no complex networking - just click and play.
-- **Auto-Scaling Built-In**: Your server automatically scales resources based on player count and world complexity. Handle more players without manual intervention.
-- **Easy Customization**: Adjust CPU, memory, and storage limits through intuitive forms. Scale your server resources as your player base grows.
-- **Zero Kubernetes Expertise Required**: Get all the benefits of Kubernetes - high availability, automatic restarts, and persistent storage - without becoming a Kubernetes expert.
-- **Persistent Storage Included**: Built-in persistent storage ensures your Minecraft worlds survive restarts, updates, and scaling events. Your players' builds are always safe.
-- **Instant Public Access**: Each deployment gets automatic public URLs with SSL certificates. Share your server with players instantly - they just need the URL to connect from their browsers.
-- **Automated Backups**: Automatic backups and disaster recovery ensure your world data is always protected.
+Use the value of `RCON_PASSWORD` when the admin panel prompts for a password.
 
-Deploy EaglerCraft Server on Sealos and focus on building amazing worlds instead of managing game servers.
+## Runtime Behavior
 
-## Deployment Guide
+The image contains both version trees:
 
-1. Visit [Sealos Cloud](https://os.sealos.io)
-2. Click on "App Store" in the desktop
-3. Search for "EaglerCraft Server" in the App Store
-4. Click "Deploy App" (no configuration required for basic deployment)
-5. Wait for deployment to complete (typically 2-3 minutes)
-6. Access your server via two available endpoints (shown in App Launchpad):
-   - **Port 5200 URL** (wss://): `wss://[your-app-url]` - Use this for adding servers via multiplayer menu
-   - **Port 5201 URL** (wss://): `wss://[your-app-url-http]` - Use this for stable, long-duration gameplay (no disconnections)
+```text
+server-1.8/   Paper 1.8.8 runtime
+server-1.12/  Paper 1.12.2 runtime
+web-1.8/      EaglercraftX 1.8 browser client
+web-1.12/     EaglercraftX 1.12 browser client
+```
+
+At startup, `script/start_server.sh` validates `MINECRAFT_VERSION`, creates the
+active symlinks, writes `server/eula.txt`, and configures RCON. It then starts
+Bungee/Waterfall and Paper under `tmux`.
+
+For `MINECRAFT_VERSION=1.12`, the active paths become:
+
+```text
+web/    -> web-1.12/
+server/ -> server-1.12/
+```
+
+For `MINECRAFT_VERSION=1.8`, the active paths become:
+
+```text
+web/    -> web-1.8/
+server/ -> server-1.8/
+```
+
+Run separate containers with separate host directories when serving both
+versions at the same time:
+
+```bash
+docker run -d \
+  --name eaglerx-1-12 \
+  -p 5200:5200 \
+  -p 5201:5201 \
+  -v /data/eagler-1.12:/eaglerX-1.8-server \
+  -e MINECRAFT_VERSION=1.12 \
+  -e RCON_PASSWORD=change-this-password \
+  ghcr.io/yangchuansheng/eaglerx1.8server:1.12.1
+
+docker run -d \
+  --name eaglerx-1-8 \
+  -p 5300:5200 \
+  -p 5301:5201 \
+  -v /data/eagler-1.8:/eaglerX-1.8-server \
+  -e MINECRAFT_VERSION=1.8 \
+  -e RCON_PASSWORD=change-this-password \
+  ghcr.io/yangchuansheng/eaglerx1.8server:1.12.1
+```
+
+The second container is available at `http://localhost:5300` and `http://localhost:5301/admin`.
 
 ## Configuration
 
-After deployment, you can customize your server through App Launchpad:
+| Variable | Required | Description |
+| --- | --- | --- |
+| `MINECRAFT_VERSION` | Yes | Selects `1.8` or `1.12`. |
+| `RCON_PASSWORD` | No | Enables RCON and the admin API on port `5201`. |
+| `SERVER_DATA_DIR` | No | Legacy world-only persistence path. |
+| `ADMIN_AUTH_SECRET` | No | Overrides the admin token signing secret. |
+| `ADMIN_AUTH_TOKEN_TTL` | No | Sets the admin token lifetime in seconds. |
+| `DYNMAP_HOST` | No | Optional Dynmap proxy host. Default: `127.0.0.1`. |
+| `DYNMAP_PORT` | No | Optional Dynmap proxy port. Default: `8123`. |
 
-- **Resource Scaling**: Adjust CPU and Memory based on player count
-- **Storage Expansion**: Increase storage for any world dimension if your players build extensively
-- **Endpoint Selection**: Both endpoints work for gameplay, but port 5201 is recommended for extended sessions
+## Persistence
 
-### Connecting to Your Server
+Mount `/eaglerX-1.8-server` for durable worlds, plugins, server configuration,
+and browser assets. When the mounted directory is empty, the container
+initializes it from the image before starting the selected runtime.
 
-**For Multiplayer Mode (Adding Server to List):**
+Recommended host layout:
 
-1. Open EaglerCraft client in your web browser
-2. Go to "Multiplayer" menu
-3. Click "Add Server" or "Direct Connect"
-4. **Important**: Use the **Port 5200 URL** (`wss://[your-app-url]`)
-5. Save and connect
+```text
+/data/eagler-1.8/   data for the Paper 1.8.8 container
+/data/eagler-1.12/  data for the Paper 1.12.2 container
+```
 
-**For Direct Play (Stable Connection):**
+Keep each version in its own directory because the active `server/` and `web/`
+paths are version-specific symlinks created at startup.
 
-1. Open EaglerCraft client in your web browser using the **Port 5201 URL** (`https://[your-app-url-http]`)
-2. This endpoint prevents disconnections during long play sessions
+## Build From Upstream
 
-**Note**: Both endpoints provide full gameplay functionality. Port 5200 is required for multiplayer server registration, while port 5201 offers superior connection stability.
+Build the same style of image locally from the upstream Gitee repository:
+
+```bash
+git clone https://gitee.com/mirrorvim/eaglerX-1.8-server.git
+cd eaglerX-1.8-server
+docker build -t ghcr.io/yangchuansheng/eaglerx1.8server:local .
+```
+
+Run the locally built image:
+
+```bash
+docker run -d \
+  --name eaglerx-local \
+  -p 5200:5200 \
+  -p 5201:5201 \
+  -v "$PWD/eagler-data:/eaglerX-1.8-server" \
+  -e MINECRAFT_VERSION=1.12 \
+  -e RCON_PASSWORD=change-this-password \
+  ghcr.io/yangchuansheng/eaglerx1.8server:local
+```
+
+This repository's GitHub Actions workflow publishes the GHCR image used by
+downstream deployments.
 
 ## Troubleshooting
 
-### Common Issues
+### Container exits immediately
 
-**Issue 1: Cannot Add Server in Multiplayer Menu**
-- Cause: Using the wrong endpoint URL (port 5201 instead of port 5200)
-- Solution: Make sure you use the **Port 5200 URL** (`wss://[your-app-url]`) when adding servers via the multiplayer menu. Port 5201 won't work for server registration.
+Set `MINECRAFT_VERSION` to one of the supported values:
 
-**Issue 2: Frequent Disconnections During Gameplay**
-- Cause: Using port 5200 for extended play sessions
-- Solution: Switch to the **Port 5201 URL** (`https://[your-app-url-http]`) for stable, uninterrupted gameplay. This endpoint is optimized to prevent disconnections.
+```bash
+-e MINECRAFT_VERSION=1.8
+-e MINECRAFT_VERSION=1.12
+```
 
-**Issue 3: Server Performance Degradation**
-- Cause: Insufficient resources for player count or world complexity
-- Solution: Scale up CPU and memory through App Launchpad. Monitor resource usage in the Sealos dashboard.
+### Admin panel does not accept commands
 
-**Issue 4: World Data Not Persisting**
-- Cause: Persistent volume claim not properly mounted
-- Solution: Verify in App Launchpad that all three volume mounts are properly configured. Check deployment logs for mount errors.
+Start the container with `RCON_PASSWORD` and expose port `5201`:
 
-### Getting Help
+```bash
+-p 5201:5201 -e RCON_PASSWORD=change-this-password
+```
 
-- [EaglerCraft Original Repository](https://github.com/lax1dude/eaglercraft)
-- [Server Docker Image Issues](https://github.com/yangchuansheng/eaglercraft-server/issues)
-- [Sealos Discord Community](https://discord.gg/wdUn538zVP)
+### World data disappears after restart
 
-## Additional Resources
+Mount the full runtime directory:
 
-- [EaglerCraft Client Access](https://eaglercraft.com/) - Play EaglerCraft in your browser
-- [Minecraft 1.8 Gameplay Guide](https://minecraft.fandom.com/wiki/Java_Edition_1.8)
+```bash
+-v /data/eagler-1.12:/eaglerX-1.8-server
+```
+
+Use a stable host path for each server version.
+
+### Running both versions at the same time conflicts on ports
+
+Map the second container to different host ports:
+
+```bash
+-p 5300:5200 -p 5301:5201
+```
+
+## Sources And Credits
+
+- Upstream server project: [mirrorvim/eaglerX-1.8-server][upstream]
+- Published image: [ghcr.io/yangchuansheng/eaglerx1.8server][container-package]
+- Original Eaglercraft and EaglercraftX work: lax1dude (Calder Young)
+- Eaglercraft server work: ayunami2000
 
 ## License
 
-This Sealos template is provided under MIT License. EaglerCraft itself is provided under its respective license - please review the [original repository](https://github.com/lax1dude/eaglercraft) for details.
+This repository is licensed under the [MIT License][license]. Review the
+upstream project and bundled components for their own licenses before
+redistribution.
+
+[container-badge]: https://img.shields.io/badge/GHCR-eaglerx1.8server-blue
+[container-package]: https://github.com/yangchuansheng/eaglercraft-server/pkgs/container/eaglerx1.8server
+[license]: LICENSE
+[license-badge]: https://img.shields.io/badge/license-MIT-green
+[sealos-badge]: https://sealos.io/Deploy-on-Sealos.svg
+[sealos-template]: https://sealos.io/products/app-store/eaglercraft-server
+[sealos-template-source]: https://github.com/labring-actions/templates/tree/kb-0.9/template/eaglercraft-server
+[upstream]: https://gitee.com/mirrorvim/eaglerX-1.8-server
