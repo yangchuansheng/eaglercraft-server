@@ -14,8 +14,7 @@ jobs:
       - name: Checkout
         uses: sudosubin/git-clone-action@v1.0.1
         with:
-          repository: mirrorvim/eaglerX-1.8-server
-          platform: 'gitee'
+          repository: yangchuansheng/eaglerXserver
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
